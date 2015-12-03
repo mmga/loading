@@ -1,134 +1,141 @@
 package com.mmga.library;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.TimeInterpolator;
+import android.animation.ValueAnimator;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.support.annotation.IntDef;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.View;
 
-import com.mmga.library.Indicator.MetroIndicator;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MetroLoadingView extends View {
 
-    public static final int rectangle = 0;
-    public static final int circle = 1;
-    public static final int metro = 2;
+    private int width = 9;
+    private int height = 16;
+    private int mColor = Color.WHITE;
+    public boolean isAnimating = false;
+    private int delay = 200;
+    private int number = 5;
+    AnimatorSet set;
 
-    public static final int DEFAULT_SIZE = 40;
-
-    @IntDef(flag = true,
-            value = {rectangle,circle,metro})
-    public @interface Indicator {
-    }
-
-    int mIndicatorId;
-    int mIndicatorColor;
-
-    Paint mPaint;
-
-    private BaseIndicatorController mIndicatorController;
-    private boolean mHasAnimation;
-
+    ArrayList<Paint> paints = new ArrayList<>();
+    List<Integer> lefts = new ArrayList<>();
+    List<Animator> valueAnimators = new ArrayList<>();
 
     public MetroLoadingView(Context context) {
         super(context);
-        init(null, 0);
+        initView(context, null);
     }
 
     public MetroLoadingView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(attrs, 0);
+        initView(context, attrs);
     }
 
     public MetroLoadingView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(attrs, defStyleAttr);
+        initView(context, attrs);
     }
 
-//    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-//    public MetroLoadingView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-//        super(context, attrs, defStyleAttr, defStyleRes);
-//        init(attrs, defStyleAttr);
-//    }
+    private void initView(Context context, AttributeSet attrs) {
 
-
-    private void init(AttributeSet attrs, int defStyle) {
-        TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.MetroLoadingView);
-        mIndicatorId = a.getInt(R.styleable.MetroLoadingView_indicator, metro);
-        mIndicatorColor = a.getColor(R.styleable.MetroLoadingView_indicator_color, Color.rgb(31, 174, 255));
-        a.recycle();
-
-        mPaint=new Paint();
-        mPaint.setColor(mIndicatorColor);
-        mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setAntiAlias(true);
-        applyIndicator();
-    }
-
-    private void applyIndicator() {
-        mIndicatorController = new MetroIndicator();
-        mIndicatorController.setmTarget(this);
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int width = measureDimension(widthMeasureSpec, dp2px(DEFAULT_SIZE));
-        int height = measureDimension(heightMeasureSpec, dp2px(DEFAULT_SIZE));
-        setMeasuredDimension(width, height);
-    }
-
-    private int measureDimension(int measureSpec, int defaultSize) {
-        int result;
-        int specMode = MeasureSpec.getMode(measureSpec);
-        int specSize = MeasureSpec.getSize(measureSpec);
-        if (specMode == MeasureSpec.EXACTLY) {
-            result = specSize;
-        } else if (specMode == MeasureSpec.AT_MOST) {
-            result = Math.min(defaultSize, specSize);
-        } else {
-            result = defaultSize;
+        for (int i = 0; i < number; i++) {
+            lefts.add(-width);
+            Paint paint = new Paint();
+            paint.setColor(mColor);
+            paint.setAntiAlias(true);
+            paints.add(paint);
         }
-        return result;
     }
+
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        mIndicatorController.draw(canvas, mPaint);
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-        if (!mHasAnimation) {
-            mHasAnimation = true;
-            applyIndicator();
+        for (int i = 0; i < number; i++) {
+            canvas.drawRect(lefts.get(i), 0, lefts.get(i) + width, height, paints.get(i));
         }
+
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        mIndicatorController.setmAnimationStatus(BaseIndicatorController.AnimStatus.CANCEL);
-    }
 
-    @Override
-    public void setVisibility(int visibility) {
-        if (getVisibility() != visibility) {
-            super.setVisibility(visibility);
-            if (visibility == GONE || visibility == INVISIBLE) {
-                mIndicatorController.setmAnimationStatus(BaseIndicatorController.AnimStatus.END);
-            } else {
-                mIndicatorController.setmAnimationStatus(BaseIndicatorController.AnimStatus.START);
+    public void start() {
+        this.setVisibility(VISIBLE);
+
+        for (int i = 0; i < number; i++) {
+            ValueAnimator animator = new ValueAnimator();
+            valueAnimators.add(animator);
+            startAnim(animator, i, delay * i);
+        }
+        set = new AnimatorSet();
+        set.playTogether(valueAnimators);
+        set.setDuration(2000);
+        set.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                set.start();
             }
+        });
+        set.start();
+
+        isAnimating = true;
+    }
+
+    private void startAnim(ValueAnimator animator, final int i, int startDelay) {
+//        if (i == number - 1) {
+//            animator.addListener(new AnimatorListenerAdapter() {
+//                @Override
+//                public void onAnimationEnd(Animator animation) {
+//                    super.onAnimationEnd(animation);
+////                    set.start();
+//                }
+//            });
+//        }
+//        animator.setDuration(2000);
+        animator.setFloatValues(0, 1f);
+        animator.setStartDelay(startDelay);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float fraction = (float) animation.getAnimatedValue();
+                lefts.set(i, (int) (fraction * getWindowWidth()));
+                invalidate();
+            }
+        });
+        animator.setInterpolator(new CustomInterpolator());
+
+    }
+
+
+    public void stop() {
+//        set.cancel();
+//        this.setVisibility(GONE);
+        isAnimating = false;
+    }
+
+
+    private int getWindowWidth() {
+        DisplayMetrics dm = getContext().getResources().getDisplayMetrics();
+        return dm.widthPixels;
+    }
+
+
+    private class CustomInterpolator implements TimeInterpolator {
+        @Override
+        public float getInterpolation(float input) {
+            return (float) (Math.asin(2 * input - 1) / Math.PI + 0.5);
         }
-
     }
 
-    private int dp2px(int dpValue) {
-        return (int) getContext().getResources().getDisplayMetrics().density * dpValue;
-    }
+
 }
+
