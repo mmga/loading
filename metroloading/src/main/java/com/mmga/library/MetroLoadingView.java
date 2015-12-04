@@ -32,17 +32,18 @@ public class MetroLoadingView extends View {
     private int mDelay;
     Paint shadowPaint, bodyPaint;
     public boolean isAnimating = false;
-    AnimatorSet set;
 
-    List<Integer> lefts = new ArrayList<>();
     List<Animator> valueAnimators = new ArrayList<>();
+
+    List<RectIndicator> rectIndicators;
 
     public static final int rectangle = 0;
     public static final int circle = 1;
-//    private boolean mTransform;
-//    private int mTransformHeight;
-//    private int mTransformWidth;
-//    private float mTransformHeightScale,mTransformwidthScale;
+    private boolean needTransform;
+    private int mTransformHeight;
+    private int mTransformWidth;
+    private int centerPositionY;
+    private AnimatorSet animatorSet;
 
     public MetroLoadingView(Context context) {
         super(context);
@@ -67,9 +68,21 @@ public class MetroLoadingView extends View {
         shadowPaint = new Paint();
         shadowPaint.setColor(mShadowColor);
         shadowPaint.setAntiAlias(true);
+        createIndicators();
 
+//        for (int i = 0; i < mNumber; i++) {
+//            lefts.add(-mWidth);
+//        }
+    }
+
+    private void createIndicators() {
+        rectIndicators = new ArrayList<>();
         for (int i = 0; i < mNumber; i++) {
-            lefts.add(-mWidth);
+            if (mHasShadow) {
+                rectIndicators.add(new RectIndicator(bodyPaint, shadowPaint));
+            } else {
+                rectIndicators.add(new RectIndicator(bodyPaint));
+            }
         }
     }
 
@@ -86,102 +99,120 @@ public class MetroLoadingView extends View {
             mDuration = a.getInt(R.styleable.MetroLoadingView_duration_in_mills, 2000);
             mDelay = a.getInt(R.styleable.MetroLoadingView_interval_in_mills, 200);
             mShape = a.getInt(R.styleable.MetroLoadingView_indicator, rectangle);
-//            mTransform =a.getBoolean(R.styleable.MetroLoadingView_transform, false);
-//            mTransformHeight = a.getDimensionPixelSize(R.styleable.MetroLoadingView_indicator_width, dp2px(6));
-//            mTransformWidth = a.getDimensionPixelSize(R.styleable.MetroLoadingView_indicator_width, dp2px(2));
-//
-//            mTransformHeightScale = mTransformHeight / mHeight;
-//            mTransformwidthScale = mTransformWidth / mWidth;
+            mTransformHeight = a.getDimensionPixelSize(R.styleable.MetroLoadingView_transform_height, mHeight);
+            mTransformWidth = a.getDimensionPixelSize(R.styleable.MetroLoadingView_transform_width, mWidth);
+            needTransform = a.getBoolean(R.styleable.MetroLoadingView_transform, false);
             a.recycle();
         }
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+//        int height = 2 * Math.max(mHeight, mTransformHeight);
+//        int mode = MeasureSpec.getMode(heightMeasureSpec);
+        int size = MeasureSpec.getSize(heightMeasureSpec);
+        centerPositionY =  size / 2;
+//        setMeasuredDimension(getWindowWidth(), height);
+        super.onMeasure(widthMeasureSpec,heightMeasureSpec);
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        switch (mShape) {
-            case (rectangle):
-                for (int i = 0; i < mNumber; i++) {
-                    if (mHasShadow) {
-                        canvas.drawRect((float) (lefts.get(i) + 0.25 * mWidth), (float) (0.25 * mHeight), (float) (lefts.get(i) + 1.25 * mWidth), (float) (1.25 * mHeight), shadowPaint);
-                    }
-                    canvas.drawRect(lefts.get(i), 0, lefts.get(i) + mWidth, mHeight, bodyPaint);
-                }
-                break;
-            case (circle):
-                for (int i = 0; i < mNumber; i++) {
-                    if (mHasShadow) {
-                        canvas.drawCircle((float) (lefts.get(i) - 0.5 * mRadius), (float) (mRadius * 1.5), mRadius, shadowPaint);
-                    }
-                    canvas.drawCircle((float) (lefts.get(i) - mRadius), (float) (mRadius), mRadius, bodyPaint);
-                }
+        for (RectIndicator rectIndicator : rectIndicators) {
+            rectIndicator.drawItself(canvas);
         }
-
-
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int height = Math.max(mHeight, 2* mRadius);
-        setMeasuredDimension(getWindowWidth(),  (2 * height));
     }
 
     public void start() {
         Log.d("mmga", "start");
         this.setVisibility(VISIBLE);
-
+        valueAnimators.clear();
         for (int i = 0; i < mNumber; i++) {
-            lefts.set(i, -mWidth);
-            ValueAnimator animator = new ValueAnimator();
-            valueAnimators.add(animator);
-            initAnim(animator, i, mDelay * i);
+            createAnimator(rectIndicators.get(i), i * mDelay);
         }
-        set = new AnimatorSet();
-        set.playTogether(valueAnimators);
-        set.setDuration(mDuration);
-        set.addListener(new AnimatorListenerAdapter() {
+        animatorSet = new AnimatorSet();
+        animatorSet.playTogether(valueAnimators);
+        animatorSet.setDuration(mDuration);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                set.start();
-                Log.d("mmga", "end");
+                if (isAnimating) {
+                    animatorSet.start();
+                    Log.d("mmga", "restart");
+
+                } else {
+                    Log.d("mmga", "end");
+                }
             }
         });
-        set.start();
+        animatorSet.start();
 
         isAnimating = true;
     }
 
-    private void initAnim(ValueAnimator animator, final int i, int startDelay) {
-        animator.setFloatValues(0, 1f);
-        animator.setStartDelay(startDelay);
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                float fraction = (float) animation.getAnimatedValue();
-                if (mShape == rectangle) {
-                    lefts.set(i, (int) (fraction * getWindowWidth()));
-                } else if (mShape == circle) {
-                    lefts.set(i, (int) (fraction * (getWindowWidth() + 2 * mRadius)));
-                }
-
-                invalidate();
-            }
-        });
+    private void createAnimator(final RectIndicator indicator, int startDelay) {
+        ValueAnimator animator = new ValueAnimator();
         animator.setInterpolator(new CustomInterpolator());
-
+        animator.setFloatValues(0, 1f);
+        animator.setDuration(mDuration);
+        animator.setStartDelay(startDelay);
+        animator.addUpdateListener(new RectIndicatorUpdateListener(indicator));
+        indicator.setShape(mShape);
+        valueAnimators.add(animator);
     }
 
+    private class RectIndicatorUpdateListener implements ValueAnimator.AnimatorUpdateListener {
+
+        RectIndicator rectIndicator;
+
+        public RectIndicatorUpdateListener(RectIndicator rectIndicator) {
+            this.rectIndicator = rectIndicator;
+        }
+
+        @Override
+        public void onAnimationUpdate(ValueAnimator animation) {
+            float fraction = animation.getAnimatedFraction();
+            int windowWidth = getWindowWidth();
+
+            rectIndicator.setCenterPositionY(centerPositionY);
+
+            if (mShape == circle) {
+                rectIndicator.setCenterPositionX((int) (fraction * (windowWidth +2* mRadius) - mRadius));
+                rectIndicator.setRadius(mRadius);
+
+
+            } else if (mShape == rectangle) {
+                rectIndicator.setCenterPositionX((int) (fraction * (windowWidth + mWidth) - 0.5 * mWidth));
+
+//                    scale of height&width
+                if (needTransform) {
+                    if (fraction < 0.5) {
+                        rectIndicator.setHeight((int) (mHeight + 2 * fraction * (mTransformHeight - mHeight)));
+                        rectIndicator.setWidth((int) (mWidth + 2 * fraction * (mTransformWidth - mWidth)));
+                    } else {
+                        rectIndicator.setHeight((int) (mHeight + 2 * (1 - fraction) * (mTransformHeight - mHeight)));
+                        rectIndicator.setWidth((int) (mWidth + 2 * (1 - fraction) * (mTransformWidth - mWidth)));
+                    }
+                } else {
+                    rectIndicator.setHeight(mHeight);
+                    rectIndicator.setWidth(mWidth);
+                }
+            }
+            invalidate();
+        }
+    }
 
     public void stop() {
-        set.cancel();
-        this.setVisibility(GONE);
         isAnimating = false;
-        valueAnimators.clear();
-
-//        lefts.clear();
+        animatorSet.end();
+        this.setVisibility(GONE);
         Log.d("mmga", "canceled");
+    }
+
+    public boolean getIsAnimating() {
+        return isAnimating;
     }
 
 
@@ -189,7 +220,6 @@ public class MetroLoadingView extends View {
         DisplayMetrics dm = getContext().getResources().getDisplayMetrics();
         return dm.widthPixels;
     }
-
 
     private class CustomInterpolator implements TimeInterpolator {
         @Override
@@ -201,9 +231,6 @@ public class MetroLoadingView extends View {
     private int dp2px(int dpValue) {
         return (int) getContext().getResources().getDisplayMetrics().density * dpValue;
     }
-
-
-
 
 
 }

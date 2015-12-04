@@ -16,12 +16,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
+        app:has_shadow="false"
         app:indicator="rectangle"
-        app:indicator_color="#123456"
-        app:interval_in_mills="150"
-        app:indicator_height="5dp"
-        app:indicator_width="2dp"
-        app:number="3" />
+        app:indicator_radius="3dp"
+        app:indicator_color="#ffffff"
+        app:indicator_height="9dp"
+        app:indicator_width="10dp"
+        app:interval_in_mills="200"
+        app:duration_in_mills="1500"
+        app:number="5"
+        app:transform="false"
+        app:transform_height="20dp"
+        app:transform_width="4dp" />
 
 
 </RelativeLayout>
