@@ -100,7 +100,6 @@ public class RotateLoading extends View {
             bottomDegree = bottomDegree - 360;
         }
 
-
         if (changeBigger) {
             if (arc < 160) {
                 arc += 2.5;
@@ -130,7 +129,9 @@ public class RotateLoading extends View {
     public void stop() {
         stopAnimator();
         invalidate();
-    };
+    }
+
+    ;
 
     public boolean isStart() {
         return isStart;

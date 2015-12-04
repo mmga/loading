@@ -13,10 +13,15 @@
 
     <com.mmga.library.MetroLoadingView
         android:id="@+id/loading"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_centerVertical="true"
-        />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        app:indicator="rectangle"
+        app:indicator_color="#123456"
+        app:interval_in_mills="150"
+        app:indicator_height="5dp"
+        app:indicator_width="2dp"
+        app:number="3" />
 
 
 </RelativeLayout>
