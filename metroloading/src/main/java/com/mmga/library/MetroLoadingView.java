@@ -30,12 +30,14 @@ public class MetroLoadingView extends View {
     private int mShadowColor;
     private int mDuration;
     private int mDelay;
-    Paint shadowPaint, bodyPaint;
-    public boolean isAnimating = false;
+    private Paint shadowPaint, bodyPaint;
+    private boolean mFadeInOut;
+    private boolean isAnimating = false;
 
-    List<Animator> valueAnimators = new ArrayList<>();
 
-    List<RectIndicator> rectIndicators;
+    private final List<Animator> valueAnimators = new ArrayList<>();
+
+    private List<RectIndicator> rectIndicators;
 
     public static final int rectangle = 0;
     public static final int circle = 1;
@@ -102,6 +104,7 @@ public class MetroLoadingView extends View {
             mTransformHeight = a.getDimensionPixelSize(R.styleable.MetroLoadingView_transform_height, mHeight);
             mTransformWidth = a.getDimensionPixelSize(R.styleable.MetroLoadingView_transform_width, mWidth);
             needTransform = a.getBoolean(R.styleable.MetroLoadingView_transform, false);
+            mFadeInOut = a.getBoolean(R.styleable.MetroLoadingView_fade, false);
             a.recycle();
         }
     }
@@ -111,9 +114,9 @@ public class MetroLoadingView extends View {
 //        int height = 2 * Math.max(mHeight, mTransformHeight);
 //        int mode = MeasureSpec.getMode(heightMeasureSpec);
         int size = MeasureSpec.getSize(heightMeasureSpec);
-        centerPositionY =  size / 2;
+        centerPositionY = size / 2;
 //        setMeasuredDimension(getWindowWidth(), height);
-        super.onMeasure(widthMeasureSpec,heightMeasureSpec);
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     @Override
@@ -165,7 +168,7 @@ public class MetroLoadingView extends View {
 
     private class RectIndicatorUpdateListener implements ValueAnimator.AnimatorUpdateListener {
 
-        RectIndicator rectIndicator;
+        private RectIndicator rectIndicator;
 
         public RectIndicatorUpdateListener(RectIndicator rectIndicator) {
             this.rectIndicator = rectIndicator;
@@ -174,31 +177,36 @@ public class MetroLoadingView extends View {
         @Override
         public void onAnimationUpdate(ValueAnimator animation) {
             float fraction = animation.getAnimatedFraction();
+            float symmetry;
+            if (fraction < 0.5) {
+                symmetry = fraction;
+            } else {
+                symmetry = 1 - fraction;
+            }
             int windowWidth = getWindowWidth();
 
             rectIndicator.setCenterPositionY(centerPositionY);
 
-            if (mShape == circle) {
-                rectIndicator.setCenterPositionX((int) (fraction * (windowWidth +2* mRadius) - mRadius));
-                rectIndicator.setRadius(mRadius);
+            if (mFadeInOut) {
+                rectIndicator.setAlpha((int) (255 * symmetry));
+            }
 
+            switch (mShape) {
+                case (circle):
+                    rectIndicator.setCenterPositionX((int) (fraction * (windowWidth + 2 * mRadius) - mRadius));
+                    rectIndicator.setRadius(mRadius);
+                    break;
+                case (rectangle):
+                    rectIndicator.setCenterPositionX((int) (fraction * (windowWidth + mWidth) - 0.5 * mWidth));
 
-            } else if (mShape == rectangle) {
-                rectIndicator.setCenterPositionX((int) (fraction * (windowWidth + mWidth) - 0.5 * mWidth));
-
-//                    scale of height&width
-                if (needTransform) {
-                    if (fraction < 0.5) {
-                        rectIndicator.setHeight((int) (mHeight + 2 * fraction * (mTransformHeight - mHeight)));
-                        rectIndicator.setWidth((int) (mWidth + 2 * fraction * (mTransformWidth - mWidth)));
+                    if (needTransform) {
+                        rectIndicator.setHeight((int) (mHeight + 2 * symmetry * (mTransformHeight - mHeight)));
+                        rectIndicator.setWidth((int) (mWidth + 2 * symmetry * (mTransformWidth - mWidth)));
                     } else {
-                        rectIndicator.setHeight((int) (mHeight + 2 * (1 - fraction) * (mTransformHeight - mHeight)));
-                        rectIndicator.setWidth((int) (mWidth + 2 * (1 - fraction) * (mTransformWidth - mWidth)));
+                        rectIndicator.setHeight(mHeight);
+                        rectIndicator.setWidth(mWidth);
                     }
-                } else {
-                    rectIndicator.setHeight(mHeight);
-                    rectIndicator.setWidth(mWidth);
-                }
+                    break;
             }
             invalidate();
         }

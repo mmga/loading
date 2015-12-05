@@ -17,6 +17,7 @@
         <attr name="transform" format="boolean" />
         <attr name="transform_height" format="dimension" />
         <attr name="transform_width" format="dimension" />
+        <attr name="fade" format="boolean" />
     </declare-styleable>
 
     <declare-styleable name="RotateLoading">

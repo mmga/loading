@@ -22,7 +22,7 @@ public class RotateLoading extends View {
     private int width;
     private int height;
     private int shadowPosition;
-    Paint mPaint;
+    private Paint mPaint;
     private int arc;
     private RectF loadingRectF;
     private RectF shadowRectF;
@@ -53,6 +53,7 @@ public class RotateLoading extends View {
             color = typedArray.getColor(R.styleable.RotateLoading_loading_color, Color.WHITE);
             width = typedArray.getDimensionPixelSize(R.styleable.RotateLoading_loading_width, dp2px(DEFAULT_WIDTH));
             shadowPosition = typedArray.getInt(R.styleable.RotateLoading_shadow_position, dp2px(DEFAULT_SHADOW_POSITION));
+            typedArray.recycle();
         }
 
         mPaint = new Paint();
@@ -130,8 +131,6 @@ public class RotateLoading extends View {
         stopAnimator();
         invalidate();
     }
-
-    ;
 
     public boolean isStart() {
         return isStart;

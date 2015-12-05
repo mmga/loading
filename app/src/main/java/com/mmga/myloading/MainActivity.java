@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mLoading.isAnimating) {
+                if (mLoading.getIsAnimating()) {
                     mLoading.stop();
                 } else {
                     mLoading.start();

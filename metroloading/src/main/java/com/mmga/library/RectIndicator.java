@@ -6,18 +6,18 @@ import android.graphics.Paint;
 public class RectIndicator {
     private int width;
     private int height;
-    private int left;
     private int centerPositionX;
     private int centerPositionY;
+    private int alpha = 255;
 
-    int shape;
+    private int shape;
 
     private int radius;
 
 
     private boolean hasShadow = false;
-    Paint bodyPaint;
-    Paint shadowPaint;
+    private final Paint bodyPaint;
+    private Paint shadowPaint;
 
     public RectIndicator(Paint bodyPaint) {
         this.bodyPaint = bodyPaint;
@@ -29,6 +29,7 @@ public class RectIndicator {
         this.shadowPaint = shadowPaint;
         hasShadow = true;
     }
+
 
     public int getWidth() {
         return width;
@@ -46,14 +47,6 @@ public class RectIndicator {
         this.height = height;
     }
 
-    public int getLeft() {
-        return left;
-    }
-
-    public void setLeft(int left) {
-        this.left = left;
-    }
-
     public int getCenterPositionX() {
         return centerPositionX;
     }
@@ -62,19 +55,41 @@ public class RectIndicator {
         this.centerPositionX = centerPositionX;
     }
 
+    public int getCenterPositionY() {
+        return centerPositionY;
+    }
+
     public void setCenterPositionY(int centerPositionY) {
         this.centerPositionY = centerPositionY;
     }
 
-    public void setRadius(int radius) {
-        this.radius = radius;
+    public int getShape() {
+        return shape;
     }
 
     public void setShape(int shape) {
         this.shape = shape;
     }
 
+    public int getAlpha() {
+
+        return alpha;
+    }
+
+    public void setAlpha(int alpha) {
+        this.alpha = alpha;
+    }
+
+    public int getRadius() {
+        return radius;
+    }
+
+    public void setRadius(int radius) {
+        this.radius = radius;
+    }
+
     public void drawItself(Canvas canvas) {
+        bodyPaint.setAlpha(alpha);
         switch (shape) {
             case MetroLoadingView.rectangle:
                 if (hasShadow) {
@@ -90,7 +105,7 @@ public class RectIndicator {
                 break;
             case MetroLoadingView.circle:
                 if (hasShadow) {
-                    canvas.drawCircle((float) (centerPositionX+0.5*radius), (float) (centerPositionY+0.5*radius),radius,shadowPaint);
+                    canvas.drawCircle((float) (centerPositionX + 0.5 * radius), (float) (centerPositionY + 0.5 * radius), radius, shadowPaint);
                 }
                 canvas.drawCircle(centerPositionX, centerPositionY, radius, bodyPaint);
                 break;
